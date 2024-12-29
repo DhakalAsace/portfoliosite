@@ -1,21 +1,125 @@
+@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;700&family=Playfair+Display:wght@400;700&family=Poppins:wght@300;400;500;600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+.font-script {
+  font-family: 'Dancing Script', cursive;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+.font-playfair {
+  font-family: 'Playfair Display', serif;
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+.font-poppins {
+  font-family: 'Poppins', sans-serif;
+}
+
+@keyframes glow {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.1); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes title {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes light-sweep {
+  0% { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+
+@keyframes gradient-animation {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes gradient-slide {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 100% 50%; }
+}
+
+.name-sweep {
+  position: relative;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.2) 0%,
+    rgba(255, 255, 255, 0.9) 50%,
+    rgba(255, 255, 255, 0.2) 100%
+  );
+  background-size: 300% auto;
+  color: white;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: light-sweep 8s linear infinite;
+}
+
+.name-glow {
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.8), 0 0 30px rgba(255, 0, 255, 0.6);
+}
+
+.subtitle-glow {
+  text-shadow: 0 0 15px rgba(238, 87, 167, 0.8), 0 0 25px rgba(119, 93, 255, 0.6);
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.animate-fade-in { opacity: 0; animation: fade-in 0.5s ease-out forwards; }
+.animate-fade-in-slow { opacity: 0; animation: fade-in 0.5s ease-out 0.3s forwards; }
+.animate-title { opacity: 0; animation: title 0.7s ease-out 0.1s forwards; }
+
+.shadow-glow { box-shadow: 0 0 30px rgba(255, 255, 255, 0.2); }
+
+.bg-animated {
+  background: linear-gradient(120deg, #1a0b2e, #7f39fb, #1a0b4e);
+  background-size: 200% 200%;
+  animation: gradient-animation 10s ease infinite;
+}
+
+.project-card {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(200px);
+}
+
+.project-card:hover {
+  transform: translateY(-5px) scale(1.02) rotate(1deg);
+  box-shadow: 0 10px 30px rgba(255, 255, 255, 0.15);
+}
+
+.hero-gradient {
+  background: linear-gradient(120deg, rgba(238, 87, 167, 0.4), rgba(119, 93, 255, 0.4));
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+* { transition: all 0.2s ease-in-out; }
+
+/* New Overlay Styles with Gradient Slide Animation */
+.image-container {
+  position: relative;
+}
+
+.image-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(120deg, rgba(255, 0, 150, 0.5), rgba(0, 204, 255, 0.5));
+  background-size: 200% 200%;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.image-container:hover .image-overlay {
+  opacity: 1;
+  animation: gradient-slide 2s linear infinite;
 }
