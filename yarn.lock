@@ -498,6 +498,11 @@
   resolved "https://registry.npmjs.org/@ungap/structured-clone/-/structured-clone-1.2.1.tgz"
   integrity sha512-fEzPV3hSkSMltkw152tJKNARhOupqbH96MZWyRjNaYZOMIzbrTeQDG+MTc6Mr2pgzFQzFxAfmhGDNP5QK++2ZA==
 
+"@vercel/analytics@^1.4.1":
+  version "1.4.1"
+  resolved "https://registry.npmjs.org/@vercel/analytics/-/analytics-1.4.1.tgz"
+  integrity sha512-ekpL4ReX2TH3LnrRZTUKjHHNpNy9S1I7QmS+g/RQXoSUQ8ienzosuX7T9djZ/s8zPhBx1mpHP/Rw5875N+zQIQ==
+
 "@vercel/speed-insights@^1.1.0":
   version "1.1.0"
   resolved "https://registry.npmjs.org/@vercel/speed-insights/-/speed-insights-1.1.0.tgz"
