@@ -20,7 +20,7 @@ interface Particle {
   grow: boolean;
 }
 
-export function AnimatedBackdrop() {
+export default function AnimatedBackdrop() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const particlesRef = useRef<Particle[]>([]);
   const mousePosRef = useRef<Vector2D | null>(null);
@@ -179,5 +179,12 @@ export function AnimatedBackdrop() {
     };
   }, [colors]);
 
-  return <canvas ref={canvasRef} className="fixed inset-0 w-full h-full pointer-events-none blur-sm" aria-hidden="true" />;
+  return (
+    <canvas 
+      ref={canvasRef} 
+      className="fixed inset-0 w-full h-full pointer-events-none blur-sm" 
+      aria-hidden="true"
+      style={{ opacity: 0.8 }}
+    />
+  );
 }
