@@ -17,12 +17,21 @@ export async function GET(request: NextRequest) {
 
     // Your case study fetching logic here
     const filePath = path.join(process.cwd(), `src/content/${id}.md`);
+    
+    if (!fs.existsSync(filePath)) {
+      return NextResponse.json(
+        { error: 'Case study not found' },
+        { status: 404 }
+      );
+    }
+
     const content = fs.readFileSync(filePath, 'utf8');
     return NextResponse.json({ content });
+    
   } catch (error) {
-    console.error(error);
+    console.error('Error fetching case study:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch case study' },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }
