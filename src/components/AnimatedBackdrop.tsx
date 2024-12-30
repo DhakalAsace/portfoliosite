@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useMemo } from 'react';
+import { useEffect, useRef, useMemo, useCallback } from 'react';
 
 interface Vector2D {
   x: number;
@@ -33,7 +33,7 @@ export default function AnimatedBackdrop() {
     '#CC66FF', // Soft Purple
   ], []);
 
-  const createParticle = (x: number, y: number): Particle => {
+  const createParticle = useCallback((x: number, y: number): Particle => {
     const color = colors[Math.floor(Math.random() * colors.length)];
     const size = 1 + Math.random() * 2;
     const life = 200 + Math.random() * 100;
@@ -50,9 +50,9 @@ export default function AnimatedBackdrop() {
       maxLife: life,
       grow: Math.random() > 0.5,
     };
-  };
+  }, [colors]);
 
-  const updateParticle = (particle: Particle, dimensions: { width: number; height: number }) => {
+  const updateParticle = useCallback((particle: Particle, dimensions: { width: number; height: number }) => {
     particle.life--;
     particle.alpha = particle.life / particle.maxLife;
 
@@ -88,7 +88,7 @@ export default function AnimatedBackdrop() {
       const { width, height } = dimensions;
       Object.assign(particle, createParticle(Math.random() * width, Math.random() * height));
     }
-  };
+  }, [createParticle]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -177,7 +177,7 @@ export default function AnimatedBackdrop() {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseleave', handleMouseLeave);
     };
-  }, [colors]);
+  }, [colors, createParticle, updateParticle]);
 
   return (
     <canvas 
