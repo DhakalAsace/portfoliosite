@@ -5,6 +5,9 @@ import { Poppins, Dancing_Script, Playfair_Display } from 'next/font/google'
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Analytics } from "@vercel/analytics/react"
 
+
+
+
 const geist = Geist({
   subsets: ['latin'],
   variable: '--font-geist',
@@ -34,9 +37,25 @@ const playfair = Playfair_Display({
 })
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://asheshdhakal.com'),
   title: 'Ashesh Dhakal - Portfolio',
-  
-  description: 'Software Developer Portfolio',
+  description: 'Student at University of Manitoba, passionate about machine learning, data science and software development and technology. View my projects and professional experience.',
+  keywords: ['Ashesh Dhakal', 'Software Developer', 'University of Manitoba', 'Student Developer','Machine Learning', 'Portfolio'],
+  authors: [{ name: 'Ashesh Dhakal' }],
+  creator: 'Ashesh Dhakal',
+  openGraph: {
+    type: 'website',
+    url: 'https://asheshdhakal.com',
+    title: 'Ashesh Dhakal - Portfolio',
+    description: 'Student at University of Manitoba, passionate about machine learning, data science and software development and technology. View my projects and professional experience.',
+    siteName: 'Ashesh Dhakal Portfolio',
+    images: [{
+      url: '/images/profile.jpg',
+      width: 1200,
+      height: 630,
+      alt: 'Ashesh Dhakal'
+    }]
+  },
   icons: {
     icon: [
       {

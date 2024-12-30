@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://asheshdhakal.com/sitemap.xml
