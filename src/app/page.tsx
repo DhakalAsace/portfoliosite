@@ -97,7 +97,7 @@ const projects: Project[] = [
   {
     id: "harmony-hub",
     title: "Harmony Hub",
-    description: "A full-stack wellness platform with real-time notifications.",
+    description: "A full-stack wellness platform.",
     media: {
       type: "image",
       src: "/images/thumbnails/harmony-hub.png"
