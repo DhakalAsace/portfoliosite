@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo, lazy, Suspense, useCallback } from "react";
+import { useState, useEffect, useRef, useMemo, lazy, Suspense, useCallback, memo } from "react";
 import { Github, Linkedin, ExternalLink, FileText, ArrowRight, Eye } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -131,7 +131,7 @@ interface ProjectCardProps {
   index: number;
 }
 
-const ProjectCard = ({ project, onShowCaseStudy, index }: ProjectCardProps) => (
+const ProjectCard = memo(({ project, onShowCaseStudy, index }: ProjectCardProps) => (
   <div className="group relative bg-white/5 rounded-xl p-6 transition-all duration-300 hover:bg-white/10 hover:shadow-glow animate-fade-in">
     <div className="aspect-video relative rounded-lg overflow-hidden mb-4">
       {project.media.type === 'video' ? (
@@ -151,7 +151,8 @@ const ProjectCard = ({ project, onShowCaseStudy, index }: ProjectCardProps) => (
           fill={true}
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           className="object-cover transition-transform duration-300 group-hover:scale-105"
-          priority={index < 2}  // Prioritize loading first 2 images
+          priority={index < 2}
+          loading={index < 2 ? "eager" : "lazy"}
         />
       )}
     </div>
@@ -188,7 +189,9 @@ const ProjectCard = ({ project, onShowCaseStudy, index }: ProjectCardProps) => (
       </button>
     </div>
   </div>
-);
+));
+
+ProjectCard.displayName = 'ProjectCard';
 
 // Add new interface for recommendations
 interface Recommendation {
@@ -269,7 +272,12 @@ export default function Page() {
   const [caseStudyContent, setCaseStudyContent] = useState<string | null>(null);
   const [showLetterModal, setShowLetterModal] = useState(false);
   const [activeRecommendation, setActiveRecommendation] = useState<Recommendation | null>(null);
-  const [activeSection, setActiveSection] = useState('hero');
+  
+  // Use optimized intersection observer
+  const currentSection = useIntersectionObserver();
+  
+  // Debounce section updates
+  const debouncedSection = useDebounce(currentSection, 100);
 
   useEffect(() => {
     if (activeCaseStudy !== null) {
@@ -280,357 +288,286 @@ export default function Page() {
     }
   }, [activeCaseStudy]);
 
-  const handleShowCaseStudy = (index: number) => {
+  const handleShowCaseStudy = useCallback((index: number) => {
     setActiveCaseStudy(index === activeCaseStudy ? null : index);
-  };
-
-  useEffect(() => {
-    const observerOptions = {
-      // More granular thresholds for better detection
-      threshold: [0, 0.25, 0.5, 0.75, 1],
-      rootMargin: '-20% 0px'
-    };
-
-    const observerCallback = (entries: IntersectionObserverEntry[]) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          // Find the most visible section
-          const visibleEntries = Array.from(document.querySelectorAll('section'))
-            .map(section => {
-              const rect = section.getBoundingClientRect();
-              const windowHeight = window.innerHeight;
-              const visibleHeight = Math.min(rect.bottom, windowHeight) - Math.max(rect.top, 0);
-              const visibleRatio = visibleHeight / windowHeight;
-              return {
-                id: section.id,
-                ratio: visibleRatio
-              };
-            })
-            .filter(entry => entry.ratio > 0)
-            .sort((a, b) => b.ratio - a.ratio);
-
-          if (visibleEntries.length > 0) {
-            setActiveSection(visibleEntries[0].id);
-          }
-        }
-      });
-    };
-
-    const observer = new IntersectionObserver(observerCallback, observerOptions);
-
-    // Observe all sections
-    sections.forEach(section => {
-      const element = document.getElementById(section.id);
-      if (element) {
-        observer.observe(element);
-      }
-    });
-
-    // Set initial active section based on scroll position
-    const setInitialActiveSection = () => {
-      const visibleSection = sections.find(section => {
-        const element = document.getElementById(section.id);
-        if (element) {
-          const rect = element.getBoundingClientRect();
-          return rect.top <= window.innerHeight / 2 && rect.bottom >= window.innerHeight / 2;
-        }
-        return false;
-      });
-      if (visibleSection) {
-        setActiveSection(visibleSection.id);
-      }
-    };
-
-    setInitialActiveSection();
-    window.addEventListener('scroll', setInitialActiveSection);
-
-    return () => {
-      observer.disconnect();
-      window.removeEventListener('scroll', setInitialActiveSection);
-    };
-  }, []);
+  }, [activeCaseStudy]);
 
   return (
     <>
-      {/* Desktop Navigation */}
-      <div className="hidden md:block">
-        <Navigation activeSection={activeSection} />
-      </div>
+      <Suspense fallback={<div className="fixed inset-0 bg-[#1a0b2e]" />}>
+        {/* Desktop Navigation */}
+        <div className="hidden md:block">
+          <Navigation activeSection={debouncedSection} />
+        </div>
 
-      {/* Mobile Navigation */}
-      <div className="block md:hidden">
-        <Navigation isMobile activeSection={activeSection} />
-      </div>
+        {/* Mobile Navigation */}
+        <div className="block md:hidden">
+          <Navigation isMobile activeSection={debouncedSection} />
+        </div>
 
-      <main className="relative min-h-screen bg-gradient-to-b from-[#1a0b2e] to-[#1a0b4e] text-white overflow-x-hidden">
-        <AnimatedBackdrop />
+        <main className="relative min-h-screen bg-gradient-to-b from-[#1a0b2e] to-[#1a0b4e] text-white overflow-x-hidden">
+          <Suspense fallback={null}>
+            <AnimatedBackdrop />
+          </Suspense>
 
-        {/* Gradient Orbs */}
-        <div className="absolute top-1/4 -left-1/4 w-1/2 h-1/2 bg-purple-500/30 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-1/4 -right-1/4 w-1/2 h-1/2 bg-pink-500/20 rounded-full blur-3xl animate-pulse delay-1000" />
+          {/* Gradient Orbs */}
+          <div className="absolute top-1/4 -left-1/4 w-1/2 h-1/2 bg-purple-500/30 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute bottom-1/4 -right-1/4 w-1/2 h-1/2 bg-pink-500/20 rounded-full blur-3xl animate-pulse delay-1000" />
 
-        {/* Hero Section */}
-        <section id="hero" className="relative min-h-screen py-20 px-4 scroll-mt-20">
-          <div className="w-full max-w-3xl mx-auto text-center space-y-8">
-            <div className="relative w-56 h-56 mx-auto mb-8 image-container">
-              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-pink-500 via-purple-500 to-purple-600 opacity-50" />
-              <div className="relative w-full h-full rounded-full overflow-hidden border-4 border-white/10">
-                <Image
-                  src="/images/profile/Ashesh Dhakal.png"
-                  alt="Ashesh Dhakal"
-                  fill
-                  className="object-cover object-[center_top] scale-125"
-                  priority
-                  sizes="(max-width: 768px) 224px, 224px"
-                />
-                <div className="image-overlay rounded-full"></div>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <p className="text-pink-400 font-script text-xl animate-fade-in">Hello, I am</p>
-              <h1 className="font-montserrat text-3xl md:text-4xl font-bold tracking-tight">
-                <span className="name-sweep">Ashesh Dhakal</span>
-              </h1>
-              <p className="font-poppins max-w-2xl mx-auto text-lg md:text-xl text-purple-200/90 leading-relaxed animate-fade-in-slow">
-                A versatile full-stack developer proficient in a wide range of front-end and back-end
-                technologies, frameworks, databases, and industry best practices.
-              </p>
-            </div>
-
-            <div className="flex items-center justify-center gap-8 pt-8 animate-fade-in-slow">
-              <Link
-                href="https://github.com/dhakalasace"
-                className="p-3 rounded-full hover:bg-white/10 transition-all hover:scale-110 hover:shadow-glow"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Github className="w-8 h-8" />
-                <span className="sr-only">GitHub Profile</span>
-              </Link>
-              <Link
-                href="https://linkedin.com/in/asheshdhakal"
-                className="p-3 rounded-full hover:bg-white/10 transition-all hover:scale-110 hover:shadow-glow"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {/* <Twitter className="w-8 h-8" />
-                <span className="sr-only">Twitter Profile</span>
-              </Link>
-              <Link
-                href="https://linkedin.com/in/asheshdhakal"
-                className="p-3 rounded-full hover:bg-white/10 transition-all hover:scale-110 hover:shadow-glow"
-                target="_blank"
-                rel="noopener noreferrer"
-              > */}
-                <Linkedin className="w-8 h-8" />
-                <span className="sr-only">LinkedIn Profile</span>
-              </Link>
-            </div>
-          </div>
-        </section>
-
-        {/* Projects Section */}
-        <section id="projects" className="relative min-h-screen py-20 px-4 scroll-mt-20">
-          <div className="max-w-6xl mx-auto">
-            <h2 className="font-playfair text-3xl md:text-4xl font-bold text-center mb-12 animate-title">
-              Featured Projects
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {projects.map((project, index) => (
-                <div key={index}>
-                  <ProjectCard
-                    project={project}
-                    index={index}
-                    onShowCaseStudy={handleShowCaseStudy}
+          {/* Hero Section */}
+          <section id="hero" className="relative min-h-screen py-20 px-4 scroll-mt-20">
+            <div className="w-full max-w-3xl mx-auto text-center space-y-8">
+              <div className="relative w-56 h-56 mx-auto mb-8 image-container">
+                <div className="absolute inset-0 rounded-full bg-gradient-to-r from-pink-500 via-purple-500 to-purple-600 opacity-50" />
+                <div className="relative w-full h-full rounded-full overflow-hidden border-4 border-white/10">
+                  <Image
+                    src="/images/profile/Ashesh Dhakal.png"
+                    alt="Ashesh Dhakal"
+                    fill
+                    className="object-cover object-[center_top] scale-125"
+                    priority
+                    sizes="(max-width: 768px) 224px, 224px"
                   />
+                  <div className="image-overlay rounded-full"></div>
                 </div>
-              ))}
-            </div>
-          </div>
-        </section>
+              </div>
 
-        {/* About Section */}
-        <section id="about" className="relative min-h-screen py-20 px-4 scroll-mt-20">
-          <div className="max-w-4xl mx-auto">
-            <h2 className="font-playfair text-3xl md:text-4xl font-bold text-center mb-12 animate-title">
-              About Me
-            </h2>
-            <div className="space-y-8 text-purple-200/90">
-              <div className="bg-white/5 rounded-xl p-8 backdrop-blur-sm border border-purple-500/20 hover:bg-white/10 transition-all duration-300">
-                <p className="text-lg leading-relaxed mb-6">
-                  I am a Data Science student at the University of Manitoba with a strong foundation in software development, holding a Computer Programming diploma with honors. My journey in tech has been driven by a passion for creating innovative solutions that bridge complex technical concepts with practical applications.
-                </p>
-                <p className="text-lg leading-relaxed mb-6">
-                  Currently, I am the founder of&nbsp;
-                  <Link 
-                    href="https://silicontutor.com" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-pink-400 hover:text-pink-300 transition-colors font-semibold"
-                  >
-                    Silicontutor
-                  </Link>
-                  , an innovative platform that transforms technical books into structured learning paths using AI. At Silicontutor, we&apos;re revolutionizing how people learn machine learning, data science, and AI engineering through interactive, AI-powered educational experiences.
-                </p>
-                <p className="text-lg leading-relaxed mb-6">
-                  I regularly share insights and guides about machine learning and AI education. My recent guide on{' '}
-                  <Link 
-                    href="https://silicontutor.com/blog/deep-learning-book-guide-beginners-career-changers" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-pink-400 hover:text-pink-300 transition-colors"
-                  >
-                    mastering deep learning book for beginners and career changers
-                  </Link>
-                  {' '}demonstrates my commitment to making complex technical concepts more approachable.
-                </p>
-                <p className="text-lg leading-relaxed">
-                  My expertise spans both full-stack development and data science, with a particular focus on explainable AI, natural language processing, and reinforcement learning for personalized education. I&apos;m passionate about making complex technical concepts accessible to everyone and believe in the power of AI to transform educational experiences.
+              <div className="space-y-4">
+                <p className="text-pink-400 font-script text-xl animate-fade-in">Hello, I am</p>
+                <h1 className="font-montserrat text-3xl md:text-4xl font-bold tracking-tight">
+                  <span className="name-sweep">Ashesh Dhakal</span>
+                </h1>
+                <p className="font-poppins max-w-2xl mx-auto text-lg md:text-xl text-purple-200/90 leading-relaxed animate-fade-in-slow">
+                  A versatile full-stack developer proficient in a wide range of front-end and back-end
+                  technologies, frameworks, databases, and industry best practices.
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="bg-white/5 rounded-xl p-6 backdrop-blur-sm border border-purple-500/20">
-                  <h3 className="text-xl font-bold mb-4 text-white">Technical Skills</h3>
-                  <ul className="space-y-2">
-                    <li>• Full-Stack Development</li>
-                    <li>• Machine Learning & AI</li>
-                    <li>• Data Science & Analytics</li>
-                    <li>• Natural Language Processing</li>
-                    <li>• Database Management</li>
-                  </ul>
-                </div>
-
-                <div className="bg-white/5 rounded-xl p-6 backdrop-blur-sm border border-purple-500/20">
-                  <h3 className="text-xl font-bold mb-4 text-white">Education</h3>
-                  <ul className="space-y-4">
-                    <li>
-                      <div className="font-semibold">University of Manitoba</div>
-                      <div className="text-pink-400">Data Science</div>
-                      <div className="text-sm">Current</div>
-                    </li>
-                    <li>
-                      <div className="font-semibold">Computer Programming Diploma</div>
-                      <div className="text-pink-400">With Honors</div>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Recommendations Section */}
-        <section id="recommendations" className="relative min-h-screen py-20 px-4 scroll-mt-20">
-          <div className="max-w-6xl mx-auto">
-            <h2 className="font-playfair text-4xl md:text-5xl font-bold text-center mb-16 animate-title">
-              Recommendations
-            </h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {recommendations.map((rec, index) => (
-                <div 
-                  key={index}
-                  className="group bg-white/5 rounded-xl p-6 backdrop-blur-sm 
-                             border border-purple-500/20 hover:bg-white/10 
-                             transition-all duration-300 hover:shadow-glow 
-                             animate-fade-in cursor-pointer"
-                  onClick={() => {
-                    if (rec.type === 'letter') {
-                      setActiveRecommendation(rec);
-                      setShowLetterModal(true);
-                    }
-                  }}
+              <div className="flex items-center justify-center gap-8 pt-8 animate-fade-in-slow">
+                <Link
+                  href="https://github.com/dhakalasace"
+                  className="p-3 rounded-full hover:bg-white/10 transition-all hover:scale-110 hover:shadow-glow"
+                  target="_blank"
+                  rel="noopener noreferrer"
                 >
-                  <div className="flex items-start gap-4">
-                    {rec.type === 'linkedin' ? (
-                      <div className="flex flex-col items-center">
-                        <Linkedin className="w-8 h-8 text-[#0077b5] mb-2" />
-                        <span className="text-xs text-purple-200/70">LinkedIn</span>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center">
-                        <FileText className="w-8 h-8 text-pink-400 mb-2" />
-                        <span className="text-xs text-purple-200/70">Letter</span>
-                      </div>
-                    )}
-                    <div>
-                      <h3 className="text-xl font-bold text-purple-200">{rec.name}</h3>
-                      <p className="text-pink-400">{rec.title}</p>
-                      <p className="text-sm text-purple-200/70 mb-4">{rec.company}</p>
-                      <p className="text-purple-100/90 leading-relaxed">
-                        &ldquo;{rec.content}&rdquo;
-                      </p>
-                      
-                      {rec.type === 'letter' && (
-                        <button className="mt-4 text-sm text-pink-400 hover:text-pink-300 
-                                         flex items-center gap-2 group-hover:translate-x-2 transition-transform">
-                          View Full Letter <ArrowRight className="w-4 h-4" />
-                        </button>
+                  <Github className="w-8 h-8" />
+                  <span className="sr-only">GitHub Profile</span>
+                </Link>
+                <Link
+                  href="https://linkedin.com/in/asheshdhakal"
+                  className="p-3 rounded-full hover:bg-white/10 transition-all hover:scale-110 hover:shadow-glow"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Linkedin className="w-8 h-8" />
+                  <span className="sr-only">LinkedIn Profile</span>
+                </Link>
+              </div>
+            </div>
+          </section>
+
+          {/* Projects Section */}
+          <section id="projects" className="relative min-h-screen py-20 px-4 scroll-mt-20">
+            <div className="max-w-6xl mx-auto">
+              <h2 className="font-playfair text-3xl md:text-4xl font-bold text-center mb-12 animate-title">
+                Featured Projects
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {projects.map((project, index) => (
+                  <div key={index}>
+                    <ProjectCard
+                      project={project}
+                      index={index}
+                      onShowCaseStudy={handleShowCaseStudy}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* About Section */}
+          <section id="about" className="relative min-h-screen py-20 px-4 scroll-mt-20">
+            <div className="max-w-4xl mx-auto">
+              <h2 className="font-playfair text-3xl md:text-4xl font-bold text-center mb-12 animate-title">
+                About Me
+              </h2>
+              <div className="space-y-8 text-purple-200/90">
+                <div className="bg-white/5 rounded-xl p-8 backdrop-blur-sm border border-purple-500/20 hover:bg-white/10 transition-all duration-300">
+                  <p className="text-lg leading-relaxed mb-6">
+                    I am a Data Science student at the University of Manitoba with a strong foundation in software development, holding a Computer Programming diploma with honors. My journey in tech has been driven by a passion for creating innovative solutions that bridge complex technical concepts with practical applications.
+                  </p>
+                  <p className="text-lg leading-relaxed mb-6">
+                    Currently, I am the founder of&nbsp;
+                    <Link 
+                      href="https://silicontutor.com" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-pink-400 hover:text-pink-300 transition-colors font-semibold"
+                    >
+                      Silicontutor
+                    </Link>
+                    , an innovative platform that transforms technical books into structured learning paths using AI. At Silicontutor, we&apos;re revolutionizing how people learn machine learning, data science, and AI engineering through interactive, AI-powered educational experiences.
+                  </p>
+                  <p className="text-lg leading-relaxed mb-6">
+                    I regularly share insights and guides about machine learning and AI education. My recent guide on{' '}
+                    <Link 
+                      href="https://silicontutor.com/blog/deep-learning-book-guide-beginners-career-changers" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-pink-400 hover:text-pink-300 transition-colors"
+                    >
+                      mastering deep learning book for beginners and career changers
+                    </Link>
+                    {' '}demonstrates my commitment to making complex technical concepts more approachable.
+                  </p>
+                  <p className="text-lg leading-relaxed">
+                    My expertise spans both full-stack development and data science, with a particular focus on explainable AI, natural language processing, and reinforcement learning for personalized education. I&apos;m passionate about making complex technical concepts accessible to everyone and believe in the power of AI to transform educational experiences.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="bg-white/5 rounded-xl p-6 backdrop-blur-sm border border-purple-500/20">
+                    <h3 className="text-xl font-bold mb-4 text-white">Technical Skills</h3>
+                    <ul className="space-y-2">
+                      <li>• Full-Stack Development</li>
+                      <li>• Machine Learning & AI</li>
+                      <li>• Data Science & Analytics</li>
+                      <li>• Natural Language Processing</li>
+                      <li>• Database Management</li>
+                    </ul>
+                  </div>
+
+                  <div className="bg-white/5 rounded-xl p-6 backdrop-blur-sm border border-purple-500/20">
+                    <h3 className="text-xl font-bold mb-4 text-white">Education</h3>
+                    <ul className="space-y-4">
+                      <li>
+                        <div className="font-semibold">University of Manitoba</div>
+                        <div className="text-pink-400">Data Science</div>
+                        <div className="text-sm">Current</div>
+                      </li>
+                      <li>
+                        <div className="font-semibold">Computer Programming Diploma</div>
+                        <div className="text-pink-400">With Honors</div>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Recommendations Section */}
+          <section id="recommendations" className="relative min-h-screen py-20 px-4 scroll-mt-20">
+            <div className="max-w-6xl mx-auto">
+              <h2 className="font-playfair text-4xl md:text-5xl font-bold text-center mb-16 animate-title">
+                Recommendations
+              </h2>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {recommendations.map((rec, index) => (
+                  <div 
+                    key={index}
+                    className="group bg-white/5 rounded-xl p-6 backdrop-blur-sm 
+                               border border-purple-500/20 hover:bg-white/10 
+                               transition-all duration-300 hover:shadow-glow 
+                               animate-fade-in cursor-pointer"
+                    onClick={() => {
+                      if (rec.type === 'letter') {
+                        setActiveRecommendation(rec);
+                        setShowLetterModal(true);
+                      }
+                    }}
+                  >
+                    <div className="flex items-start gap-4">
+                      {rec.type === 'linkedin' ? (
+                        <div className="flex flex-col items-center">
+                          <Linkedin className="w-8 h-8 text-[#0077b5] mb-2" />
+                          <span className="text-xs text-purple-200/70">LinkedIn</span>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center">
+                          <FileText className="w-8 h-8 text-pink-400 mb-2" />
+                          <span className="text-xs text-purple-200/70">Letter</span>
+                        </div>
                       )}
+                      <div>
+                        <h3 className="text-xl font-bold text-purple-200">{rec.name}</h3>
+                        <p className="text-pink-400">{rec.title}</p>
+                        <p className="text-sm text-purple-200/70 mb-4">{rec.company}</p>
+                        <p className="text-purple-100/90 leading-relaxed">
+                          &ldquo;{rec.content}&rdquo;
+                        </p>
+                        
+                        {rec.type === 'letter' && (
+                          <button className="mt-4 text-sm text-pink-400 hover:text-pink-300 
+                                           flex items-center gap-2 group-hover:translate-x-2 transition-transform">
+                            View Full Letter <ArrowRight className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
+
+              
             </div>
 
-            
-          </div>
-
-          {/* Letter Modal */}
-          {showLetterModal && activeRecommendation && (
-            <Dialog open={showLetterModal} onOpenChange={() => setShowLetterModal(false)}>
-              <DialogContent className="fixed inset-4 lg:inset-auto lg:left-1/2 lg:top-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2 
-                                        w-[calc(100%-2rem)] lg:w-[90vw] lg:max-w-4xl h-[calc(100vh-2rem)] 
-                                        bg-gradient-to-b from-[#1a0b2e]/95 to-[#1a0b4e]/95 rounded-xl 
-                                        border border-purple-500/20 shadow-2xl backdrop-blur-xl overflow-hidden">
-                <div className="sticky top-0 z-30 flex items-center justify-between p-4 lg:p-6 bg-[#1a0b2e]/90 backdrop-blur-sm border-b border-purple-500/20">
-                  <DialogTitle className="text-xl lg:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-purple-200">
-                    Letter of Recommendation - {activeRecommendation?.company}
-                  </DialogTitle>
-                  <button 
-                    onClick={() => setShowLetterModal(false)}
-                    className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-                  >
-                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-                <div className="h-[calc(100%-4rem)] p-6 overflow-y-auto">
-                  <Image
-                    src={activeRecommendation?.letterImageUrl || ''}
-                    alt={`Letter of Recommendation from ${activeRecommendation?.company}`}
-                    width={800}
-                    height={1200}
-                    className="w-full h-auto rounded-lg mb-6"
-                  />
-                  <div className="text-center p-4 bg-white/5 rounded-lg backdrop-blur-sm">
-                    <p className="text-purple-200/70">
-                      For access to original recommendation letters or contact information of my references,
-                      please <Link href="mailto:dhakalasace777@email.com" className="text-pink-400 hover:text-pink-300">reach out to me</Link>.
-                    </p>
+            {/* Letter Modal */}
+            {showLetterModal && activeRecommendation && (
+              <Dialog open={showLetterModal} onOpenChange={() => setShowLetterModal(false)}>
+                <DialogContent className="fixed inset-4 lg:inset-auto lg:left-1/2 lg:top-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2 
+                                          w-[calc(100%-2rem)] lg:w-[90vw] lg:max-w-4xl h-[calc(100vh-2rem)] 
+                                          bg-gradient-to-b from-[#1a0b2e]/95 to-[#1a0b4e]/95 rounded-xl 
+                                          border border-purple-500/20 shadow-2xl backdrop-blur-xl overflow-hidden">
+                  <div className="sticky top-0 z-30 flex items-center justify-between p-4 lg:p-6 bg-[#1a0b2e]/90 backdrop-blur-sm border-b border-purple-500/20">
+                    <DialogTitle className="text-xl lg:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-purple-200">
+                      Letter of Recommendation - {activeRecommendation?.company}
+                    </DialogTitle>
+                    <button 
+                      onClick={() => setShowLetterModal(false)}
+                      className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                    >
+                      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
                   </div>
-                </div>
-              </DialogContent>
-            </Dialog>
-          )}
-        </section>
+                  <div className="h-[calc(100%-4rem)] p-6 overflow-y-auto">
+                    <Image
+                      src={activeRecommendation?.letterImageUrl || ''}
+                      alt={`Letter of Recommendation from ${activeRecommendation?.company}`}
+                      width={800}
+                      height={1200}
+                      className="w-full h-auto rounded-lg mb-6"
+                    />
+                    <div className="text-center p-4 bg-white/5 rounded-lg backdrop-blur-sm">
+                      <p className="text-purple-200/70">
+                        For access to original recommendation letters or contact information of my references,
+                        please <Link href="mailto:dhakalasace777@email.com" className="text-pink-400 hover:text-pink-300">reach out to me</Link>.
+                      </p>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            )}
+          </section>
 
-        {/* Case Study Modal */}
-        <AnimatePresence>
-          {activeCaseStudy !== null && caseStudyContent && (
-            <Suspense fallback={<div className="animate-pulse bg-white/10 rounded-lg h-96" />}>
-              <CaseStudyModal
-                isOpen={true}
-                onClose={() => setActiveCaseStudy(null)}
-                content={caseStudyContent}
-              />
-            </Suspense>
-          )}
-        </AnimatePresence>
-      </main>
+          {/* Case Study Modal */}
+          <AnimatePresence>
+            {activeCaseStudy !== null && caseStudyContent && (
+              <Suspense fallback={<div className="animate-pulse bg-white/10 rounded-lg h-96" />}>
+                <CaseStudyModal
+                  isOpen={true}
+                  onClose={() => setActiveCaseStudy(null)}
+                  content={caseStudyContent}
+                />
+              </Suspense>
+            )}
+          </AnimatePresence>
+        </main>
+      </Suspense>
     </>
   );
 }
@@ -789,4 +726,67 @@ function CaseStudyModal({ isOpen, onClose, content }: CaseStudyModalProps) {
       </DialogContent>
     </Dialog>
   );
+}
+
+// Debounce hook
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
+
+// Intersection observer hook
+function useIntersectionObserver() {
+  const [currentSection, setCurrentSection] = useState('hero');
+  const observerRef = useRef<IntersectionObserver | null>(null);
+
+  const callback = useCallback((entries: IntersectionObserverEntry[]) => {
+    const visibleSections = entries
+      .filter(entry => entry.isIntersecting)
+      .map(entry => ({
+        id: entry.target.id,
+        ratio: entry.intersectionRatio
+      }))
+      .sort((a, b) => b.ratio - a.ratio);
+
+    if (visibleSections.length > 0) {
+      setCurrentSection(visibleSections[0].id);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (observerRef.current) {
+      observerRef.current.disconnect();
+    }
+
+    observerRef.current = new IntersectionObserver(callback, {
+      threshold: [0.2, 0.5, 0.8],
+      rootMargin: '-10% 0px'
+    });
+
+    const elements = document.querySelectorAll('section[id]');
+    elements.forEach(element => {
+      if (observerRef.current) {
+        observerRef.current.observe(element);
+      }
+    });
+
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
+    };
+  }, [callback]);
+
+  return currentSection;
 }

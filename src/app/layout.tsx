@@ -5,35 +5,41 @@ import { Poppins, Dancing_Script, Playfair_Display } from 'next/font/google'
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Analytics } from "@vercel/analytics/react"
 
-
-
-
+// Optimize font loading with display swap
 const geist = Geist({
   subsets: ['latin'],
   variable: '--font-geist',
+  display: 'swap',
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  display: 'swap',
 });
 
 const poppins = Poppins({
   subsets: ['latin'],
   weight: ['300', '400', '500', '600'],
   variable: '--font-poppins',
+  display: 'swap',
+  preload: true,
 })
 
 const dancingScript = Dancing_Script({
   subsets: ['latin'],
   weight: ['400', '700'],
   variable: '--font-dancing-script',
+  display: 'swap',
+  preload: true,
 })
 
 const playfair = Playfair_Display({
   subsets: ['latin'],
   weight: ['400', '700'],
   variable: '--font-playfair',
+  display: 'swap',
+  preload: true,
 })
 
 export const metadata: Metadata = {
@@ -98,6 +104,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Preload critical assets */}
+        <link
+          rel="preload"
+          href="/images/profile/Ashesh Dhakal.png"
+          as="image"
+          type="image/png"
+        />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+      </head>
       <body
         className={`${geist.variable} ${geistMono.variable} ${poppins.variable} ${dancingScript.variable} ${playfair.variable} antialiased`}
         suppressHydrationWarning
