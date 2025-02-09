@@ -227,6 +227,7 @@ const recommendations: Recommendation[] = [
 const sections = [
   { id: 'hero', label: 'Home' },
   { id: 'projects', label: 'Projects' },
+  { id: 'about', label: 'About' },
   { id: 'recommendations', label: 'Recommendations' }
 ];
 
@@ -445,6 +446,77 @@ export default function Page() {
                   />
                 </div>
               ))}
+            </div>
+          </div>
+        </section>
+
+        {/* About Section */}
+        <section id="about" className="relative min-h-screen py-20 px-4 scroll-mt-20">
+          <div className="max-w-4xl mx-auto">
+            <h2 className="font-playfair text-3xl md:text-4xl font-bold text-center mb-12 animate-title">
+              About Me
+            </h2>
+            <div className="space-y-8 text-purple-200/90">
+              <div className="bg-white/5 rounded-xl p-8 backdrop-blur-sm border border-purple-500/20 hover:bg-white/10 transition-all duration-300">
+                <p className="text-lg leading-relaxed mb-6">
+                  I am a Data Science student at the University of Manitoba with a strong foundation in software development, holding a Computer Programming diploma with honors. My journey in tech has been driven by a passion for creating innovative solutions that bridge complex technical concepts with practical applications.
+                </p>
+                <p className="text-lg leading-relaxed mb-6">
+                  Currently, I am the founder of&nbsp;
+                  <Link 
+                    href="https://silicontutor.com" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-pink-400 hover:text-pink-300 transition-colors font-semibold"
+                  >
+                    Silicontutor
+                  </Link>
+                  , an innovative platform that transforms technical books into structured learning paths using AI. At Silicontutor, we&apos;re revolutionizing how people learn machine learning, data science, and AI engineering through interactive, AI-powered educational experiences.
+                </p>
+                <p className="text-lg leading-relaxed mb-6">
+                  I regularly share insights and guides about machine learning and AI education. My recent guide on{' '}
+                  <Link 
+                    href="https://silicontutor.com/blog/deep-learning-book-guide-beginners-career-changers" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-pink-400 hover:text-pink-300 transition-colors"
+                  >
+                    mastering deep learning book for beginners and career changers
+                  </Link>
+                  {' '}demonstrates my commitment to making complex technical concepts more approachable.
+                </p>
+                <p className="text-lg leading-relaxed">
+                  My expertise spans both full-stack development and data science, with a particular focus on explainable AI, natural language processing, and reinforcement learning for personalized education. I&apos;m passionate about making complex technical concepts accessible to everyone and believe in the power of AI to transform educational experiences.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="bg-white/5 rounded-xl p-6 backdrop-blur-sm border border-purple-500/20">
+                  <h3 className="text-xl font-bold mb-4 text-white">Technical Skills</h3>
+                  <ul className="space-y-2">
+                    <li>• Full-Stack Development</li>
+                    <li>• Machine Learning & AI</li>
+                    <li>• Data Science & Analytics</li>
+                    <li>• Natural Language Processing</li>
+                    <li>• Database Management</li>
+                  </ul>
+                </div>
+
+                <div className="bg-white/5 rounded-xl p-6 backdrop-blur-sm border border-purple-500/20">
+                  <h3 className="text-xl font-bold mb-4 text-white">Education</h3>
+                  <ul className="space-y-4">
+                    <li>
+                      <div className="font-semibold">University of Manitoba</div>
+                      <div className="text-pink-400">Data Science</div>
+                      <div className="text-sm">Current</div>
+                    </li>
+                    <li>
+                      <div className="font-semibold">Computer Programming Diploma</div>
+                      <div className="text-pink-400">With Honors</div>
+                    </li>
+                  </ul>
+                </div>
+              </div>
             </div>
           </div>
         </section>
